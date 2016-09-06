@@ -1,0 +1,444 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>To Do List</title>
+
+   
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <style>
+
+        .col-centered{
+            float: none;
+            width: 60%;
+            margin: 0 auto;
+        }
+    </style>
+
+
+    <script>
+
+    function RemoveGMTFromDate(date)
+    {
+        var dateStr = String(date).split(' ').slice(0,4).join(' ');
+        return dateStr;
+    }
+
+
+    /*Updating UI Elements with UserInfo*/
+
+
+
+    function SendAjaxRequest(date, listGroupName, listName)
+    {
+
+        var dateStr = RemoveGMTFromDate(date);
+        
+
+        var dateAsHeading = "<li id = "+listName+"  class=\"list-group-item\" >"+dateStr+"</li>";
+
+        $(listGroupName).empty().append(dateAsHeading)
+
+        $month = date.getMonth() +1
+
+        dateToQueryTasks = date.getFullYear()+"-"+$month+"-"+date.getDate();
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8081/Task?date="+String(dateToQueryTasks),
+                data: { 'taskDate': dateToQueryTasks, 'queryType':'select'},
+                cache: false,
+                success: function(data, status)
+                    {
+                        if (status =='success' && data != '')
+                        {
+                           
+                            $(listGroupName).append(data);
+                        }
+                        else
+                        {
+                            // alert("Data In Yest Empty: " + data + "\nStatus: " + status);
+                        }
+                    }
+                });
+
+    }
+ 
+ 	$(document).ready( function(){
+
+
+ 		var today = new Date();  //  d.setDate( d.getDate() + 1 ) // tommorrow's date
+
+        todayDateStr = RemoveGMTFromDate(today)
+
+        // Display today's date at the top
+        $("#dateDisp").text(todayDateStr)
+
+        // Update the main heading 
+        var userName = ""
+          $.get("http://localhost:8081/UserName", function (data,status){
+
+                userName = String(data)
+                $("#appHeading").text("Manage Tasks   "+String(userName))
+        })
+       
+        
+
+        // Display dates of yesterday, today and tomorrow as the top row of three columns respectively
+        SendAjaxRequest(today, "#todayListGroup", "todayDateLi")
+
+        var yesterday = new Date()
+
+        yesterday.setDate( yesterday.getDate() - 1 )
+
+        SendAjaxRequest(yesterday, "#yestListGroup", "yestDateLi")
+
+    
+
+        var tommorrow = new Date();
+
+        tommorrow.setDate( tommorrow.getDate() + 1 );
+
+        SendAjaxRequest(tommorrow, "#tommListGroup", "tommDateLi")
+
+        $("#logoutLink").click(function(){
+
+            $.get("http://localhost:8081/logout", function (data,status){
+
+                window.location = data;
+
+                 // alert("In - Logout Data: " + data + "\nStatus: " + data.uri);
+
+            })
+
+        })
+     
+ 		$("#addTaskBtn").click(function(){
+
+ 				var task = $("#inputTask").val()
+
+                if (task != "")
+                {
+
+                    $month = today.getMonth() +1
+                    var dateToAddInDB = today.getFullYear()+"-"+$month+"-"+today.getDate();
+                 
+
+                    $.ajax({
+                        type: "POST",
+                        url: "http://localhost:8081/Task",
+                        data: { 'taskDate': dateToAddInDB, 'taskName':task,'taskType' : "None"},
+                        cache: false,
+                        success: function(data, status)
+                            {
+                                if (status !='success')
+                                {
+                                    // alert("Data: " + data + "\nStatus: " + status);
+                                }
+
+                            }
+                        });
+
+                    /*Add the task as a list item*/
+     				var taskInList = "<li class=\"list-group-item\">"+task+"</li>"
+
+     				$("#todayListGroup").append(taskInList)
+
+                    $("#inputTask").val("")
+                }
+ 			
+ 		})
+
+        $("#leftScroll").click(function(){
+
+
+            today.setDate(today.getDate()-1)
+            //remove the GMT part from date
+            todayDateStr = RemoveGMTFromDate(today);
+
+            // Display today's date at the top
+            $("#dateDisp").text(todayDateStr)
+
+
+            /*Updating Today Column*/
+            SendAjaxRequest(today, "#todayListGroup", "todayDateLi");     
+
+            /*Updating Yesterday Column*/
+
+            yesterday.setDate( yesterday.getDate() - 1 )
+
+            SendAjaxRequest(yesterday, "#yestListGroup", "yestDateLi");
+
+
+            /*Updating Tommorow Column*/
+            tommorrow.setDate( tommorrow.getDate() - 1 );
+
+            SendAjaxRequest(tommorrow, "#tommListGroup", "tommDateLi");
+            
+        })
+
+
+        $("#rightScroll").click(function(){
+
+
+            today.setDate(today.getDate()+1)
+            //remove the GMT part from date
+            todayDateStr = RemoveGMTFromDate(today);
+
+            // Display today's date at the top
+            $("#dateDisp").text(todayDateStr)
+
+            /*Updating Today Column*/
+
+            SendAjaxRequest(today, "#todayListGroup", "todayDateLi");
+      
+
+            /*Updating Yesterday Column*/
+
+            yesterday.setDate( yesterday.getDate() + 1 );
+
+            SendAjaxRequest(yesterday, "#yestListGroup", "yestDateLi");
+
+            /*Updating Tomorrow Column*/
+
+            tommorrow.setDate( tommorrow.getDate() + 1 );
+
+            SendAjaxRequest(tommorrow, "#tommListGroup", "tommDateLi");
+
+        })
+
+        $(document).on('dblclick', 'li', function(e)
+        {
+            var taskName = $(this).text();
+
+            $(this).html("<input id = \"taskEditField\" value = \"" + taskName+ "\" />"); 
+            $(this).children().first().focus(); 
+            $(this).children().first().keypress(function (e) 
+                {
+                    if (e.which == 13)
+                        {   
+                            var newTaskName = $(this).val(); 
+                            
+
+                            //Get the li element containing the taskedit input field
+                            $listItem = $(this).parent();
+
+                            $ulDate = $(this).parent().parent().attr('id');
+
+                            //construct the selector to get first list item in ul that is the date
+                            $dateLiId = "#" + $ulDate + " li:first"
+
+                            // Get the date
+                            var dateValue  = $($dateLiId).text();
+
+                            var monthAray = {'Jan':1, 'Feb':2, 'Mar':3, 'Apr':4, 'May':5, 'Jun':6, 'Jul':7, 'Aug':8, 'Sep':9, 'Oct':10, 'Nov':11, 'Dec':12}
+
+                            // Construct the date
+                            var dateItems = dateValue.split(' ');
+
+                            $dateToQueryTasks = dateItems[3] + "-" + monthAray[dateItems[1]] + "-" + dateItems[2];
+
+                            if (newTaskName == "")
+                            {
+                                 $.ajax({
+                                    type: "DELETE",
+                                    url: "http://localhost:8081/Task?date="+String(dateToQueryTasks)+"&task="+String(taskName),
+                                    // data: { 'taskDate': $dateToQueryTasks, 'taskName': taskName,  'queryType':'delete'},
+                                    cache: false,
+                                    success: function(data, status)
+                                        {
+                                            if (status =='success')
+                                            {
+                                                $listItem.remove();  
+                                            }
+                                            else
+                                            {
+                                                 alert("Error Occured: \n Status: " + status);
+                                            }
+                                        }
+                                });
+                                
+                            }
+                            else
+                            {
+                                $.ajax({
+                                    type: "POST",
+                                    url: "data.php",
+                                    data: { 'taskDate': $dateToQueryTasks, 'taskName': taskName, 'newTaskName': newTaskName, 'queryType':'update'},
+                                    cache: false,
+                                    success: function(data, status)
+                                        {
+                                            if (status =='success')
+                                            {
+                                               
+                                                $listItem.text(newTaskName); 
+                                            }
+                                            else
+                                            {
+                                                 alert("Error Occured: \n Status: " + status);
+                                            }
+                                        }
+                                });
+                            }
+
+                        } 
+                }); 
+            $(this).children().first().blur(function()
+                {
+                    var newTaskName = $(this).val();
+
+                    //Get the li element containing the taskedit input field
+                    $listItem = $(this).parent();
+
+                    //Get the ul id
+                    $ulDate = $(this).parent().parent().attr('id');
+
+                    //construct the selector to get first list item in ul that is the date
+                    $dateLiId = "#" + $ulDate + " li:first"
+
+                    // Get the date
+                    var dateValue  = $($dateLiId).text();
+
+                    var monthAray = {'Jan':1, 'Feb':2, 'Mar':3, 'Apr':4, 'May':5, 'Jun':6, 'Jul':7, 'Aug':8, 'Sep':9, 'Oct':10, 'Nov':11, 'Dec':12}
+
+                    // Construct the date
+                    var dateItems = dateValue.split(' ');
+
+                    $dateToQueryTasks = dateItems[3] + "-" + monthAray[dateItems[1]] + "-" + dateItems[2];
+
+                    if (newTaskName == "")
+                    {
+                         $.ajax({
+                            type: "POST",
+                            url: "data.php",
+                            data: { 'taskDate': $dateToQueryTasks, 'taskName': taskName,  'queryType':'delete'},
+                            cache: false,
+                            success: function(data, status)
+                                {
+                                    if (status =='success')
+                                    {
+                                        $listItem.remove(); 
+                                    }
+                                    else
+                                    {
+                                         alert("Error Occured: \n Status: " + status);
+                                    }
+                                }
+                        });
+                        
+                    }
+                    else
+                    {
+                        $.ajax({
+                            type: "POST",
+                            url: "data.php",
+                            data: { 'taskDate': $dateToQueryTasks, 'taskName': taskName, 'newTaskName': newTaskName, 'queryType':'update'},
+                            cache: false,
+                            success: function(data, status)
+                                {
+                                    if (status =='success')
+                                    {  
+                                        $listItem.text(newTaskName); 
+                                    }
+                                    else
+                                    {
+                                         alert("Error Occured: \n Status: " + status);
+                                    }
+                                }
+                        });
+                    }
+
+                }); 
+
+    });
+
+       
+ 	})
+    
+ 
+    </script>
+</head>
+<body>
+ 
+
+    <div class = "row">
+        <div class = "col-md-6 col-centered">
+             <h2 id="appHeading" >Manage Tasks By Date</h2>  
+
+
+        </div>
+
+        <div class = "col-md-6 col-centered">
+                
+             <a href="" id="logoutLink">Logout</a>
+             <!-- <a href="http://localhost:8081/logout" id="logoutLink2">Logout</a> -->
+        </div>
+    </div>
+    <br>
+
+    <div class = "row">
+        <div class="col-md-2 ">
+            <h4>Date to Add task</h4>
+        </div>
+    </div>
+
+    <div class = "row">
+
+        <div class="col-md-1">
+
+            <input id = "leftScroll" type = "image" src = "left-arrow.png"> </input>
+        </div>
+
+        <div class="col-md-1">
+            <h4 id = "dateDisp"> </h4>
+        </div>
+
+        <div class="col-md-1">
+            <input id = "rightScroll" type = "image" src = "right-arrow.png"></input>
+        </div>
+    </div>
+
+    <br>
+    
+    <input id = "inputTask" ></input> 
+
+    <button id = "addTaskBtn"> Add Task</button>
+
+
+    <!-- Div to show tasks per date -->
+    <div class="row">
+    <div  id = "div1" class="col-md-4" style="background-color:lavender;">
+
+         <ul id = "yestListGroup" class="list-group" >
+            
+        </ul>
+    	
+    </div>
+
+    <div id = "div2" class="col-md-4" style="background-color:lavenderblush;">
+
+        <ul id = "todayListGroup" class="list-group" >
+            
+        </ul>
+
+    </div>
+
+    <div id = "div3" class="col-md-4" style="background-color:lavender;">
+
+
+         <ul id = "tommListGroup" class="list-group" >
+            
+        </ul>
+
+    </div>
+   </div>
+
+
+</body>
+</html> 
