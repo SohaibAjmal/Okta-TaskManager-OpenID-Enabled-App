@@ -9,7 +9,7 @@ This application uses Okta's universal directory, therefore user needs to exist 
 
 # Requirements
 
-Server code is written in node js and following libraries need to be installed via npm.
+Server code is written in Node.js and following libraries need to be installed via npm.
 
 1) http
 
