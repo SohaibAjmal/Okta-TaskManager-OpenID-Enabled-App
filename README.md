@@ -40,3 +40,7 @@ Checkout the code and before you run change everything in <> to your environment
 
 In login-widget.html change <org-name> to your Okta's org name and <clientId> to client id of your app you created in Okta. 
 
+You would need to get the keys for your org to validate the signature of id token. Go to https://github.com/jpf/okta-jwks-to-pem and get keys using script in there. 
+
+Once you have the keys, update pemKeys in server.js under endpoint /sso/oidc. For example.
+
