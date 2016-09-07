@@ -32,6 +32,8 @@ Server code is written in node js and following libraries need to be installed v
 Make sure Open ID is enabled for your org and you have created the open id app in Okta, by going to Applications -> Add Applications
 -> Create New App -> Select Open ID and Web App from drop down. Set the redirect uri to "http://localhost:8081/"
 
+Make sure all the suer that you test are assigned to the app.
+
 Also, make sure that CORS is enabeld for http://localhost:8081/ in your org. Go to Security -> API -> CORS and add http://localhost:8081/
 
 # Update Files to Your Environment 
@@ -42,5 +44,22 @@ In login-widget.html change <org-name> to your Okta's org name and <clientId> to
 
 You would need to get the keys for your org to validate the signature of id token. Go to https://github.com/jpf/okta-jwks-to-pem and get keys using script in there. 
 
-Once you have the keys, update pemKeys in server.js under endpoint /sso/oidc. For example.
+Once you have the keys, update pemKeys in server.js under endpoint /sso/oidc. Eaach line should have 64 characters and wrapped in BEGIN PUBLIC KEY and END PUBLIC KEY. For example.
+
+ar pemKeys = "-----BEGIN PUBLIC KEY-----"+"\n"+
+"<First 64 characters>"+"\n"+
+"<Second set of 64 characters>"+"\n"+
+"<Third set of 64 characters>"+"\n"+
+"<Fourth set of 64 characters>"+"\n"+
+"<Fifth set of 64 characters>"+"\n"+
+"<Sixth set of 64 characters>"+"\n"+
+"<Remaining characters>"+"\n"+
+"-----END PUBLIC KEY-----"
+
+
+Once you have all set up, in the command shell run 
+
+node server.js
+
+visit localhost:8081/ and sign in as Okta user. Add task, logout and sign in as another user (make sure assigned to app) and add some tasks.
 
